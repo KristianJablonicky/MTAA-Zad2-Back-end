@@ -8,8 +8,9 @@
 from django.db import models
 
 
+
 class Application(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     worker_id = models.IntegerField()
     job_offer_id = models.IntegerField()
     description = models.TextField(blank=True, null=True)
@@ -23,7 +24,7 @@ class Application(models.Model):
 
 
 class Call(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     worker_id = models.IntegerField()
     employer_id = models.IntegerField()
     name = models.CharField(max_length=30)
@@ -35,7 +36,7 @@ class Call(models.Model):
 
 
 class Company(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=50)
     detail = models.TextField(blank=True, null=True)
     phone = models.CharField(max_length=15, blank=True, null=True)
@@ -48,7 +49,7 @@ class Company(models.Model):
 
 
 class Employer(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     email = models.CharField(max_length=30, blank=True, null=True)
     birth_date = models.DateField(blank=True, null=True)
     phone = models.CharField(max_length=15, blank=True, null=True)
@@ -62,7 +63,7 @@ class Employer(models.Model):
 
 
 class JobOffer(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=50)
     employer_id = models.IntegerField()
     field = models.CharField(max_length=30)
@@ -76,8 +77,10 @@ class JobOffer(models.Model):
         db_table = 'job_offer'
 
 
+
+
 class Worker(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     birth_date = models.DateField(blank=True, null=True)
     email = models.CharField(max_length=30, blank=True, null=True)
     name = models.CharField(max_length=50)
