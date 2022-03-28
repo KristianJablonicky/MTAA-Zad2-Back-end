@@ -22,6 +22,10 @@ urlpatterns = [
     path('testApplication', views.testApplication),
     path('postCall/<int:employer_id>/<int:worker_id>', views.postCall),
     path('testCall', views.testCall),
+    path('deleteUser/<str:type>/<int:user_id>', views.deleteUser),
+    path('testDeleteUser', views.testDeleteUser),
+    path('deleteJobOffer/<int:job_offer_id>', views.deleteJobOffer),
+    path('testDeleteJobOffer', views.testDeleteJobOffer),
     path('admin/', admin.site.urls),
     path('users/', views.get_all_users),
 ]
