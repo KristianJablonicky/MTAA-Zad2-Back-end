@@ -117,12 +117,11 @@ def post_employer (request, type, name, password, company):
 def test1_w (request, type, name, password):
 
     r = requests.post('http://127.0.0.1:8000/postUser/' + type + '/' + name + '/' + password)
-    return HttpResponse("test1 dobehol")
+    return HttpResponse(r.text)
 
 def test1_e (request, type, name, password, company):
-
     r = requests.post('http://127.0.0.1:8000/postUser/' + type + '/' + name + '/' + password + '/' + company)
-    return HttpResponse("test1 dobehol")
+    return HttpResponse(r.text)
 
 def postJobOffer (request, name, employer_id, field, salary, working_hours, location, detail):
     if request.method == 'POST':
@@ -132,9 +131,8 @@ def postJobOffer (request, name, employer_id, field, salary, working_hours, loca
     else:
         return HttpResponse("postJobOffer nie je POST")
 def testJobOffer (request):
-
-    r = requests.post('http://127.0.0.1:8000/postJobOffer/' + 'TestMeno/1/TestField/800/00:08/TestLocation/testtesttestdetail')
-    return HttpResponse("Dobehol testJobOffer")
+    r = requests.post('http://127.0.0.1:8000/postJobOffer/' + 'TestMeno/12/TestField/800/00:08/TestLocation/testtesttestdetail')
+    return HttpResponse(r.text)
 
 
 def postApplication (request, worker_id, job_offer_id, description, created_on, expires_on):
@@ -153,7 +151,7 @@ def postApplication (request, worker_id, job_offer_id, description, created_on, 
 
 def testApplication (request):
     r = requests.post('http://127.0.0.1:8000/postApplication/' + '1/1/som pracoviti/1528797322/1528797340')
-    return HttpResponse("Dobehol testApplication")
+    return HttpResponse(r.text)
 
 def postCall (request, employer_id, worker_id):
     if request.method == 'POST':
@@ -169,4 +167,42 @@ def postCall (request, employer_id, worker_id):
 
 def testCall (request):
     r = requests.post('http://127.0.0.1:8000/postCall/1/4')
-    return HttpResponse("Dobehol testCall")
+    return HttpResponse(r.text)
+
+def deleteUser (request, type, user_id):
+
+    if request.method == 'DELETE':
+        if type == 'W':
+            
+            Application.objects.filter(worker_id=user_id).delete() # vymazanie vsetkych Applications worker-a
+            Worker.objects.filter(id=user_id).delete() # vymazanie worker-a samotneho
+        elif type == 'E':
+            
+            query = JobOffer.objects.raw('SELECT id FROM job_offer WHERE employer_id =' + str(user_id) + ';') #zistenie idciek JobOffer-ov vytvorenych danym employer-om
+            for vysledok in query:
+                Application.objects.filter(job_offer_id=vysledok.id).delete()
+            JobOffer.objects.filter(employer_id=user_id).delete() # vymazanie vsetkych JobOffers vytvorenych employer-om
+            Employer.objects.filter(id=user_id).delete()
+        else:
+            return HttpResponse("Nesprávny formát! Používateľ nie je ani Worker, ani Employer")
+
+    else:
+        return HttpResponse("deleteUser nie je DELETE")
+
+    return HttpResponse("deleteUser bol uspesny.")
+
+def testDeleteUser (request):
+    r = requests.delete('http://127.0.0.1:8000/deleteUser/E/12')
+    return HttpResponse(r.text)
+
+def deleteJobOffer (request, job_offer_id):
+    if request.method == 'DELETE':
+        Application.objects.filter(job_offer_id=job_offer_id).delete() # vymazanie applications viazucich sa na mazanu pracovnu ponuku
+        JobOffer.objects.filter(id=job_offer_id).delete()
+    else:
+        return HttpResponse("deleteJobOffer nie je DELETE")
+    return HttpResponse("deleteJobOffer bol úspešný")
+
+def testDeleteJobOffer (request):
+    r = requests.delete('http://127.0.0.1:8000/deleteJobOffer/6')
+    return HttpResponse(r.text)
