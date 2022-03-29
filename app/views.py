@@ -63,17 +63,17 @@ def post_worker (request, type, name, password):
         else:
             print("worker nema type W")
 
-        return HttpResponse(returnValue)
+        return HttpResponse(returnValue, status=201)
     else:
-        return HttpResponse("request.method != POST")
+        return HttpResponse("request.method != POST", status=400)
 
 def postCompany (request, company):
     if request.method == 'POST':
         newCompany = Company(name = company, phone = 'tel.Cislo', email = 'e-mail')
         newCompany.save()
-        return HttpResponse("Firma bola pridaná do databázy")
+        return HttpResponse("Firma bola pridaná do databázy", status=201)
     else:
-        return HttpResponse("postCompany nebol post :O")
+        return HttpResponse("postCompany.method != POST", status=400)
 
 def post_employer (request, type, name, password, company):
 
@@ -108,31 +108,31 @@ def post_employer (request, type, name, password, company):
         else:
             print("worker nema type W")
 
-        return HttpResponse(returnValue)
+        return HttpResponse(returnValue, status=201)
     else:
-        return HttpResponse("request.method != POST")
+        return HttpResponse("request.method != POST", status=400)
 
 
 
 def test1_w (request, type, name, password):
 
     r = requests.post('http://127.0.0.1:8000/postUser/' + type + '/' + name + '/' + password)
-    return HttpResponse(r.text)
+    return HttpResponse(r.text, status=200)
 
 def test1_e (request, type, name, password, company):
     r = requests.post('http://127.0.0.1:8000/postUser/' + type + '/' + name + '/' + password + '/' + company)
-    return HttpResponse(r.text)
+    return HttpResponse(r.text, status=200)
 
 def postJobOffer (request, name, employer_id, field, salary, working_hours, location, detail):
     if request.method == 'POST':
         newOffer = JobOffer(name=name, employer_id=employer_id, field=field, salary=salary, working_hours=working_hours, location=location, detail=detail)
         newOffer.save()
-        return HttpResponse("postJobOffer bol uspesny")
+        return HttpResponse("postJobOffer bol uspesny", status=201)
     else:
-        return HttpResponse("postJobOffer nie je POST")
+        return HttpResponse("postJobOffer nie je POST", status=400)
 def testJobOffer (request):
     r = requests.post('http://127.0.0.1:8000/postJobOffer/' + 'TestMeno/12/TestField/800/00:08/TestLocation/testtesttestdetail')
-    return HttpResponse(r.text)
+    return HttpResponse(r.text, status=200)
 
 
 def postApplication (request, worker_id, job_offer_id, description, created_on, expires_on):
@@ -145,13 +145,13 @@ def postApplication (request, worker_id, job_offer_id, description, created_on, 
         else:
             print("Dany Application uz existuje.")
     else:
-        return HttpResponse("postApplication nie je POST")
+        return HttpResponse("postApplication nie je POST", status=400)
 
-    return HttpResponse("postApplication bol uspesny")
+    return HttpResponse("postApplication bol uspesny", status=201)
 
 def testApplication (request):
     r = requests.post('http://127.0.0.1:8000/postApplication/' + '1/1/som pracoviti/1528797322/1528797340')
-    return HttpResponse(r.text)
+    return HttpResponse(r.text, status=200)
 
 def postCall (request, employer_id, worker_id):
     if request.method == 'POST':
@@ -161,13 +161,13 @@ def postCall (request, employer_id, worker_id):
         newCall = Call(employer_id = employer_id, worker_id = worker_id, name = queryJobName[0].name + ' Call', status = False)
         newCall.save()
     else:
-        return HttpResponse("postCall nie je POST")
+        return HttpResponse("postCall nie je POST", status=400)
 
-    return HttpResponse("postCall bol uspesny")
+    return HttpResponse("postCall bol uspesny", status=201)
 
 def testCall (request):
     r = requests.post('http://127.0.0.1:8000/postCall/1/4')
-    return HttpResponse(r.text)
+    return HttpResponse(r.text, status=200)
 
 def deleteUser (request, type, user_id):
 
@@ -184,25 +184,25 @@ def deleteUser (request, type, user_id):
             JobOffer.objects.filter(employer_id=user_id).delete() # vymazanie vsetkych JobOffers vytvorenych employer-om
             Employer.objects.filter(id=user_id).delete()
         else:
-            return HttpResponse("Nesprávny formát! Používateľ nie je ani Worker, ani Employer")
+            return HttpResponse("Nesprávny formát! Používateľ nie je ani Worker, ani Employer", status=400)
 
     else:
-        return HttpResponse("deleteUser nie je DELETE")
+        return HttpResponse("deleteUser nie je DELETE", status=400)
 
-    return HttpResponse("deleteUser bol uspesny.")
+    return HttpResponse("deleteUser bol úspešný.", status=200)
 
 def testDeleteUser (request):
     r = requests.delete('http://127.0.0.1:8000/deleteUser/E/12')
-    return HttpResponse(r.text)
+    return HttpResponse(r.text, status=200)
 
 def deleteJobOffer (request, job_offer_id):
     if request.method == 'DELETE':
         Application.objects.filter(job_offer_id=job_offer_id).delete() # vymazanie applications viazucich sa na mazanu pracovnu ponuku
         JobOffer.objects.filter(id=job_offer_id).delete()
     else:
-        return HttpResponse("deleteJobOffer nie je DELETE")
-    return HttpResponse("deleteJobOffer bol úspešný")
+        return HttpResponse("deleteJobOffer nie je DELETE", status=400)
+    return HttpResponse("deleteJobOffer bol úspešný", status=200)
 
 def testDeleteJobOffer (request):
     r = requests.delete('http://127.0.0.1:8000/deleteJobOffer/6')
-    return HttpResponse(r.text)
+    return HttpResponse(r.text, status=200)
