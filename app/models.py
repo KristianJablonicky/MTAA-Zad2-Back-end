@@ -8,7 +8,6 @@
 from django.db import models
 
 
-
 class Application(models.Model):
     id = models.AutoField(primary_key=True)
     worker_id = models.IntegerField()
@@ -39,9 +38,10 @@ class Company(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=50)
     detail = models.TextField(blank=True, null=True)
-    phone = models.CharField(max_length=15, blank=True, null=True)
-    email = models.CharField(max_length=30, blank=True, null=True)
+    phone = models.CharField(max_length=15)
+    email = models.CharField(max_length=30)
     website = models.CharField(max_length=30, blank=True, null=True)
+    employer_id = models.IntegerField()
 
     class Meta:
         managed = False
@@ -53,9 +53,9 @@ class Employer(models.Model):
     email = models.CharField(max_length=30, blank=True, null=True)
     birth_date = models.DateField(blank=True, null=True)
     phone = models.CharField(max_length=15, blank=True, null=True)
-    company_id = models.IntegerField(blank=True, null=True)
-    name = models.CharField(max_length=50, blank=True, null=True)
-    password = models.CharField(max_length=30, blank=True, null=True)
+    company_id = models.IntegerField()
+    name = models.CharField(max_length=50)
+    password = models.CharField(max_length=30)
 
     class Meta:
         managed = False
@@ -67,7 +67,7 @@ class JobOffer(models.Model):
     name = models.CharField(max_length=50)
     employer_id = models.IntegerField()
     field = models.CharField(max_length=30)
-    salary = models.TextField(blank=True, null=True)  # This field type is a guess.
+    salary = models.IntegerField(blank=True, null=True) 
     working_hours = models.DurationField(blank=True, null=True)
     location = models.CharField(max_length=50, blank=True, null=True)
     detail = models.TextField(blank=True, null=True)
@@ -85,7 +85,8 @@ class Worker(models.Model):
     email = models.CharField(max_length=30, blank=True, null=True)
     name = models.CharField(max_length=50)
     phone = models.CharField(max_length=15, blank=True, null=True)
-    password = models.CharField(max_length=30, blank=True, null=True)
+    password = models.CharField(max_length=30)
+    cv = models.BinaryField(blank=True, null=True)
 
     class Meta:
         managed = False
