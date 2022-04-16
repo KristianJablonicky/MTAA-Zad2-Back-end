@@ -8,9 +8,33 @@ from django.forms.models import model_to_dict
 from django.views.decorators.http import require_http_methods
 from app.models import *
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import requests
+
+wrong_type = "ERROR: Wrong user type!"
+false_auth = "Data can be altered only by its owner!"
+wrong_id = "User could not be found!"
+empty_response = "Database does not include any specified data: "
+succ_save = "Data has been successfully saved: "
+fail_save = "Altered data could not be found: "
+succ_delete = "Data has been successfully deleted: "
+succ_create = "Data has been created: "
+fail_create = "Data already exists: "
+
+def get_id(name, password):
+
+    id = -1
+
+    user = Worker.objects.filter(name = name,password = password)
+
+    if not user:
+        user = Employer.objects.filter(name = name,password = password)
+
+    if user:
+        id = user[0].id
+
+    return int(id)
 
 def home(request):
     """Renders the home page."""
@@ -24,29 +48,38 @@ def home(request):
         }
     )
 
+
 #GET
 @require_http_methods(["GET"])
-def get_all_users(request): 
+def get_all_users(request, type='A'): 
 
-    workers = Worker.objects.all()
+    if type != 'W' and type != 'E' and type != 'A':
+        return HttpResponse(wrong_type, status=400)
 
-    employers = Employer.objects.all()
+    dict = []
 
+    if type == 'W' or type == 'A':
+        workers = Worker.objects.all()
+        dict += list(workers.values())
+
+    if type == 'E' or type == 'A':
+        employers = Employer.objects.all()
+        dict += list(employers.values())
     
-    dict = list(workers.values()) + list(employers.values())
-
     return HttpResponse(json.dumps(dict, indent = 4, default=str), content_type="application/json")
 
 @require_http_methods(["GET"])
-def login_user(request, name, password):
-
+def login_user(request, name, password): 
     users = Worker.objects.filter(name = name,password = password)
 
     if not users:
         users = Employer.objects.filter(name = name,password = password)
 
     if not users:
-        return HttpResponse("Zle zadané prihlasovacie údaje!", status=204)
+        if Worker.objects.filter(name = name) or Employer.objects.filter(name = name):
+            return HttpResponse("Wrong password", status=204)
+
+        return HttpResponse(empty_response + "User with name = " + name + " and password = " + password, status=204)
 
     return HttpResponse(json.dumps(list(users.values()), indent = 4, default=str), content_type="application/json")
 
@@ -56,7 +89,7 @@ def get_worker(request, id):
     workers = Worker.objects.filter(id = id)
 
     if not workers:
-        return HttpResponse("Robotník sa nenašiel.", status=204)
+        return HttpResponse(empty_response + "Worker with id = " + id, status=204)
 
     return HttpResponse(json.dumps(list(workers.values()), indent = 4, default=str), content_type="application/json")
 
@@ -66,7 +99,7 @@ def get_employer(request, id):
     Employers = Employer.objects.filter(id = id)
 
     if not Employers:
-        return HttpResponse("Zamestnávateľ sa nenašiel.", status=204)
+        return HttpResponse(empty_response + "Employer with id = " + id, status=204)
 
     return HttpResponse(json.dumps(list(Employers.values()), indent = 4, default=str), content_type="application/json")
 
@@ -74,9 +107,6 @@ def get_employer(request, id):
 def get_all_employers(request, companyID):
 
     Employers = Employer.objects.filter(company_id = companyID)
-
-    if not Employers:
-        return HttpResponse("SPoločnosť nemá žiadnych zamestnancov.", status=204)
 
     return HttpResponse(json.dumps(list(Employers.values()), indent = 4, default=str), content_type="application/json")
 
@@ -86,7 +116,7 @@ def get_company(request, id):
     Companies = Company.objects.filter(id = id)
 
     if not Companies:
-        return HttpResponse("Spoločnosť sa nenašla.", status=204)
+        return HttpResponse(empty_response + "Company with id = " + id, status=204)
 
     return HttpResponse(json.dumps(list(Companies.values()), indent = 4, default=str), content_type="application/json")
 
@@ -96,7 +126,7 @@ def get_job_offer(request, id):
     Offers = JobOffer.objects.filter(id = id)
 
     if not Offers:
-        return HttpResponse("Pracovná ponuka sa nenašla.", status=204)
+        return HttpResponse(empty_response + "Job offer with id = " + id, status=204)
 
     return HttpResponse(json.dumps(list(Offers.values()), indent = 4, default=str), content_type="application/json")
 
@@ -104,9 +134,6 @@ def get_job_offer(request, id):
 def get_all_job_offers(request, employerID):
 
     Offers = JobOffer.objects.filter(employer_id = employerID)
-
-    if not Offers:
-        return HttpResponse("Neexistujú žiadne pracovné ponuky zamestnávateľa.", status=204)
 
     return HttpResponse(json.dumps(list(Offers.values()), indent = 4, default=str), content_type="application/json")
 
@@ -120,10 +147,7 @@ def get_all_calls (request, type, id):
         Calls = Call.objects.filter(employer_id = id)
 
     else:
-        return HttpResponse("Zadal si zlý typ používateľa.", status= 400)
-
-    if not Calls:
-        return HttpResponse("História hovorov je prázdna.", status=204)
+        return HttpResponse(wrong_type, status= 400)
 
     return HttpResponse(json.dumps(list(Calls.values()), indent = 4, default=str), content_type="application/json")
 
@@ -137,10 +161,7 @@ def get_all_applications (request, type, id):
         Applications = Application.objects.filter(job_offer_id = id)
 
     else:
-        return HttpResponse("Zadal si zlý typ používateľa.", status= 400)
-
-    if not Applications:
-        return HttpResponse("Pracovník nemá žiadne požiadavky.", status=204)
+        return HttpResponse(wrong_type, status= 400)
 
     return HttpResponse(json.dumps(list(Applications.values()), indent = 4, default=str), content_type="application/json")
 
@@ -149,299 +170,426 @@ def search_Jobs (request):
 
     Offers = JobOffer.objects.all()
 
-    if not Offers:
-        return HttpResponse("Neexistujú žiadne pracovné ponuky.", status=204)
-
     return HttpResponse(json.dumps(list(Offers.values()), indent = 4, default=str), content_type="application/json")
+
 
 #PUT
 @require_http_methods(["PUT"])
-def put_worker (request, id, name, password, birth_date, email, phone, cv):
+def put_worker (request, oldName, oldPassword, name = None, password = None, birth_date = None, email = None, phone = None):
+    id = get_id(oldName, oldPassword)
 
-    if (not name) or (not password):
-        return HttpResponse("Chybné údaje robotníka.", status=400)
+    if id == -1:
+        return HttpResponse(wrong_id, status=401)
 
     worker = Worker.objects.get (pk = id)
 
-    if not worker:
-        return HttpResponse("Robotník sa nenašiel.", status=404)
+    if name:
+        worker.name = name
 
-    worker.name = name
-    worker.password = password
-    worker.birth_date = birth_date
-    worker.email = email
-    worker.phone = phone
-    #doplnit ukladanie pdf
-    #worker.cv = ....
+    if password:
+        worker.password = password
+
+    if birth_date is not None:
+        if birth_date:
+            worker.birth_date = birth_date
+        else:
+             worker.birth_date =  None
+
+    if email is not None:
+        if email:
+            worker.email = email
+        else:
+             worker.email = None
+
+    if phone is not None:
+        if phone:
+            worker.phone = phone
+        else:
+            worker.phone = None
+
 
     worker.save()
-    return HttpResponse("Robotnik bol úspešne uložený.", status=200)
+    return HttpResponse(succ_save + "Worker with id = " + id, status=200)
+
+#def post_cv (request):
+#doplnit ukladanie pdf
+#worker.cv = ....
 
 @require_http_methods(["PUT"])
-def put_employer (request, id, name, password, birth_date, email, phone, companyName):
+def put_employer (request, oldName, oldPassword, name = None, password = None, birth_date = None, email = None, phone = None, companyId = None):
+    id = get_id(oldName, oldPassword)
 
-    if (not name) or (not password):
-        return HttpResponse("Chybné údaje zamestnávateľa.", status=400)
+    if id == -1:
+        return HttpResponse(wrong_id, status=401)
 
     employer = Employer.objects.get (pk = id)
 
-    if not employer:
-        return HttpResponse("Zamestnávateľ sa nenašiel.", status = 404)
+    if name:
+        employer.name = name
 
-    company = Company.objects.get(name = companyName)
+    if password:
+        employer.password = password
 
-    if (not company) and companyName:
-        return HttpResponse("Meno spoločnosti sa nenašlo.", status = 404)
+    if birth_date is not None:
+        if birth_date:
+            employer.birth_date = birth_date
+        else:
+             employer.birth_date =  None
 
+    if email is not None:
+        if email:
+            employer.email = email
+        else:
+             employer.email = None
 
-    employer.name = name
-    employer.password = password
-    employer.birth_date = birth_date
-    employer.email = email
-    employer.phone = phone
-    employer.company_id = company.id
+    if phone is not None:
+        if phone:
+            employer.phone = phone
+        else:
+            employer.phone = None
+
+    if companyId:
+        company = Company.objects.get(pk = companyId)
+        employer.company_id = company.id
+
 
     employer.save()
-    return HttpResponse("Zamestnávateľ bol úspešne uložený.", status=200)
+    return HttpResponse(succ_save + "Employer with id = " + id, status=200)
 
 @require_http_methods(["PUT"])
-def put_call (request, userID, id, name, status):
+def put_call (request, name, password, id, callName = None, status = None):
+    userID = get_id(name, password)
 
-    if (not name) or (not status):
-        return HttpResponse("Chybné údaje hovoru.", status=400)
+    if userID == -1:
+        return HttpResponse(wrong_id, status=401)
 
     call = Call.objects.get (pk = id)
 
-    if not call:
-        return HttpResponse("Hovor sa nenašiel.", status = 404)
+    if userID != call.worker_id and userID != call.employer_id:      
+        return HttpResponse(false_auth, status = 401)
 
-    if (userID != call.worker_id) and  (userID != call.employer_id):
-        return HttpResponse("Hovor možu meniť iba jeho účastníci.", status = 401)
+    if name:
+        call.name = callName
 
-    call.name = name
-    call.status = status
+    if status:
+        call.status = status
 
     call.save()
-    return HttpResponse("Hovor bol úspešne uložený.", status=200)
+    return HttpResponse(succ_save + "Call with id = " + id, status=200)
 
 @require_http_methods(["PUT"])
-def put_job_offer (request, employerID, id, name, field, salary, working_hours, location, detail):
+def put_job_offer (request, name, password, id, jobName = None, field = None, salary = None, working_hours = None, location = None, detail = None):
+    employerID = get_id(name, password)
 
+    if employerID == -1:
+        return HttpResponse(wrong_id, status=401)
+    
     offer = JobOffer.objects.get(pk = id)
 
-    if not offer:
-        return HttpResponse("Pracovná ponuka sa nenašla.", status = 404)
-
     if employerID != offer.employer_id:
-        return HttpResponse("Pracovnú ponuku možu meniť iba jej vlastník.", status = 401)
+        return HttpResponse(false_auth, status = 401)
 
-    offer.name = name
-    offer.field = field
-    offer.salary = salary
-    offer.working_hours = working_hours
-    offer.location = location
-    offer.detail = detail
+    if name:
+        offer.name = jobName
+
+    if field:
+        offer.field = field
+
+    if salary is not None:
+        if salary:
+            offer.salary = salary
+        else:
+            offer.salary = None
+
+    if working_hours is not None:
+        if working_hours:
+            offer.working_hours = working_hours
+        else:
+            offer.working_hours = None
+
+    if location is not None:
+        if location:
+            offer.location = location
+        else:
+            offer.location = None
+
+
+    if detail is not None:
+        if detail:
+            offer.detail = detail
+        else:
+            offer.detail = None
 
     offer.save()
-    return HttpResponse("Pracovná ponuka bola úspešne uložená.", status=200)
+    return HttpResponse(succ_save + "Job offer with id = " + id, status=200)
 
 @require_http_methods(["PUT"])
-def put_applicationE (request , employerID, id , response):
+def put_applicationE (request, name, password, id, response):
+    employerID = get_id(name, password)
+
+    if employerID == -1:
+        return HttpResponse(wrong_id, status=401)
 
     application = Application.objects.get(pk = id)
-
-    if not application:
-        return HttpResponse("Žiadosť sa nenašla.", status = 404)
-
     offer = JobOffer.objects.get(pk = application.job_offer_id)
 
-    if not offer:
-        return HttpResponse("Pracovná ponuka žiadosti sa nenašla.", status = 404)
-
     if offer.employer_id != employerID:
-        return HttpResponse("Na žiadosť može odpovedať iba vlastník pracovnej ponuky žiadosti.", status = 401)
+        return HttpResponse(false_auth, status = 401)
 
     application.response = response
 
     application.save()
-    return HttpResponse("Odpoveď na žiadosť bola úspešne uložená.", status=200)
+    return HttpResponse(succ_save + "Application with id = " + id, status=200)
 
 @require_http_methods(["PUT"])
-def put_applicationW (request , workerID, id , description, expires_on):
+def put_applicationW (request , name, password, id , description = None, expires_on = None):
+    workerID = get_id(name, password)
 
+    if workerID == -1:
+        return HttpResponse(wrong_id, status=401)
+    
     application = Application.objects.get(pk = id)
 
-    if not application:
-        return HttpResponse("Žiadosť sa nenašla.", status = 404)
-
     if application.worker_id != workerID:
-        return HttpResponse("Žiadosť može meniž iba jej podateľ.", status = 401)
+        return HttpResponse(false_auth, status = 401)
 
-    application.description = description
-    application.expires_on = expires_on
+    if description is not None:
+        if description:
+            application.description = description
+        else:
+            application.description = None
+
+    if expires_on:
+        application.expires_on = expires_on
 
     application.save()
-    return HttpResponse("Žiadosť bola úspešne uložená.", status=200)
+    return HttpResponse(succ_save + "Application with id = " + id, status=200)
+
 
 #POST
-def post_worker (request, type, name, password):
+@require_http_methods(["POST"])
+def post_worker (request, name, password, birth_date = None, email = None, phone = None): 
+   query = Worker.objects.filter(name = name)
 
-    if request.method == 'POST':
+   if query:
+       return HttpResponse(fail_create + "Worker with name = " + name, status=409)
 
-        returnValue = "Používateľ " + name + " nebol úspešne vytvorený!"
-        
-        if type == 'W':
-            query = Worker.objects.raw('SELECT id, name FROM worker where name = \'' + name + '\';') # kontrola, ci dane meno este nie je v databaze
+   query = Employer.objects.filter(name = name)
 
-            if not query:
-                newWorker = Worker(name=name, password=password)
-                newWorker.save()
-                returnValue = "Používateľ " + name + " bol úspešne vytvorený."
+   if query:
+       return HttpResponse(fail_create + "Employer with name = " + name, status=409)
 
-            else:
-                print("Pouzivatel s menom ", name, " uz existuje")
-        else:
-            print("worker nema type W")
+   newWorker = Worker(name=name, password=password)
 
-        return HttpResponse(returnValue, status=201)
-    else:
-        return HttpResponse("request.method != POST", status=400)
+   if birth_date:
+       newWorker.birth_date = birth_date
 
-def postCompany (request, company):
-    if request.method == 'POST':
-        newCompany = Company(name = company, phone = 'tel.Cislo', email = 'e-mail')
-        newCompany.save()
-        return HttpResponse("Firma bola pridaná do databázy", status=201)
-    else:
-        return HttpResponse("postCompany.method != POST", status=400)
+   if email:
+        newWorker.email = email
+      
+   if phone:
+        newWorker.phone = phone
+       
+   newWorker.save()
+   return HttpResponse(succ_create + "Worker with name = " + name, status=201)
 
-def post_employer (request, type, name, password, company):
+@require_http_methods(["POST"])
+def post_employer (request, name, password, companyName, birth_date = None, email = None, phone = None):
+    query = Worker.objects.filter(name = name)
 
-    if request.method == 'POST':
+    if query:
+       return HttpResponse(fail_create + "Worker with name = " + name, status=409)
 
-        returnValue = "Používateľ " + name + " nebol úspešne vytvorený!"
-        
-        if type == 'E':
-            queryName = Employer.objects.raw('SELECT id, name FROM employer where name = \'' + name + '\';')
-            queryCompany = Employer.objects.raw('SELECT id FROM company where name = \'' + company + '\';')
+    query = Employer.objects.filter(name = name)
+
+    if query:
+       return HttpResponse(fail_create + "Employer with name = " + name, status=409)
+
+    query = Company.objects.filter(name = companyName)
             
-            if not queryName:
+    if not query: 
+        return HttpResponse("Company with name = " + companyName + "does not exist", status=404)
 
-                if queryCompany:
+    newEmployer = Employer(name=name, password=password, company_id=query[0].id)
 
-                    print("--ID: " + str(queryCompany[0].id))
+    if birth_date:
+        newEmployer.birth_date = birth_date
 
-                    newWorker = Employer(name=name, password=password, company_id=queryCompany[0].id)
-                    newWorker.save()
-                    returnValue = "Používateľ " + name + " bol úspešne vytvorený."
-                
-                else: # company nie je pridana v databaze
+    if email:
+        newEmployer.email = email
+      
+    if phone:
+        newEmployer.phone = phone
 
-                    r = requests.post('http://127.0.0.1:8000/postCompany/' + company)
-                    queryCompany = Employer.objects.raw('SELECT id FROM company where name = \'' + company + '\';')
+    newEmployer.save()
+    return HttpResponse(succ_create + "Employer with name = " + name, status=201)
 
-                    newWorker = Employer(name=name, password=password, company_id=queryCompany[0].id)
-                    newWorker.save()
-                    returnValue = "Používateľ " + name + ", a ich firma bola úspešne vytvorená."
-            else:
-                print("Pouzivatel s menom ", name, " uz existuje, alebo firma ", company, "nie je v databaze.")
-        else:
-            print("worker nema type W")
+@require_http_methods(["POST"])
+def post_company (request, name, phone, email, website = None, detail = None):
+    query = Company.objects.filter(name = name)
+    
+    if query: 
+        return HttpResponse(fail_create + "Company with name = " + name, status=409)
 
-        return HttpResponse(returnValue, status=201)
-    else:
-        return HttpResponse("request.method != POST", status=400)
+    newCompany = Company(name = name,phone =  phone, email = email)
 
-def test1_w (request, type, name, password):
+    if website:
+       newCompany.website = website
 
-    r = requests.post('http://127.0.0.1:8000/postUser/' + type + '/' + name + '/' + password)
-    return HttpResponse(r.text, status=200)
+    if detail:
+        newCompany.detail = detail
 
-def test1_e (request, type, name, password, company):
-    r = requests.post('http://127.0.0.1:8000/postUser/' + type + '/' + name + '/' + password + '/' + company)
-    return HttpResponse(r.text, status=200)
+    newCompany.save()
+    return HttpResponse(succ_create + "Company with name = " + name , status=201)
 
-def postJobOffer (request, name, employer_id, field, salary, working_hours, location, detail):
-    if request.method == 'POST':
-        newOffer = JobOffer(name=name, employer_id=employer_id, field=field, salary=salary, working_hours=working_hours, location=location, detail=detail)
-        newOffer.save()
-        return HttpResponse("postJobOffer bol uspesny", status=201)
-    else:
-        return HttpResponse("postJobOffer nie je POST", status=400)
+@require_http_methods(["POST"])
+def post_jobOffer (request, name, password,  job_name, field, salary = None, working_hours = None, location = None, detail = None):
+    id = get_id(name, password)
 
-def testJobOffer (request):
-    r = requests.post('http://127.0.0.1:8000/postJobOffer/' + 'TestMeno/12/TestField/800/00:08/TestLocation/testtesttestdetail')
-    return HttpResponse(r.text, status=200)
+    if id == -1:
+        return HttpResponse(wrong_id, status=401)
 
-def postApplication (request, worker_id, job_offer_id, description, created_on, expires_on):
-    if request.method == 'POST':
-        query = Application.objects.raw('SELECT id FROM Application WHERE worker_id = ' + str(worker_id) + ' AND job_offer_id = ' + str(job_offer_id) + ';')
-        if not query:
-            newApplication = Application(worker_id = worker_id, job_offer_id = job_offer_id, description = description,
-                                        created_on =  datetime.fromtimestamp(created_on), expires_on =  datetime.fromtimestamp(expires_on))
-            newApplication.save()
-        else:
-            print("Dany Application uz existuje.")
-    else:
-        return HttpResponse("postApplication nie je POST", status=400)
+    query = Employer.objects.filter(name = name, password = password)
 
-    return HttpResponse("postApplication bol uspesny", status=201)
+    if not query:
+        return HttpResponse("Only employer can create Job Offers", status=401)
 
-def testApplication (request):
-    r = requests.post('http://127.0.0.1:8000/postApplication/' + '1/1/som pracoviti/1528797322/1528797340')
-    return HttpResponse(r.text, status=200)
+    query = JobOffer.objects.filter(employer_id = id, name = job_name, field =field)
 
-def postCall (request, employer_id, worker_id):
-    if request.method == 'POST':
+    if query:
+        return HttpResponse(fail_create + "JobOffer with id = " + str(query[0].id), status=409)
 
-        queryJobName = JobOffer.objects.raw('SELECT id, name FROM job_offer WHERE employer_id = \'' + str(employer_id) + '\';')
-        
-        newCall = Call(employer_id = employer_id, worker_id = worker_id, name = queryJobName[0].name + ' Call', status = False)
-        newCall.save()
-    else:
-        return HttpResponse("postCall nie je POST", status=400)
+    newOffer = JobOffer(name=job_name, employer_id=id, field=field)
 
-    return HttpResponse("postCall bol uspesny", status=201)
+    if salary:
+        newOffer.salary=salary
 
-def testCall (request):
-    r = requests.post('http://127.0.0.1:8000/postCall/1/4')
-    return HttpResponse(r.text, status=200)
+    if working_hours:
+        newOffer.working_hours=working_hours
+
+    if location:
+        newOffer.location=location
+
+    if detail:
+        newOffer.detail=detail
+    
+    newOffer.save()
+    return HttpResponse(succ_create + "Job Offer with name = " + job_name, status=201)
+
+@require_http_methods(["POST"])
+def post_application (request, name, password, id, description = None, expires_on = None):
+    workerID = get_id(name, password)
+
+    if workerID == -1:
+        return HttpResponse(wrong_id, status=401)
+
+    query = Worker.objects.filter(name = name, password = password)
+
+    if not query:
+        return HttpResponse("Only worker can create Applications", status=401)
+
+    query = Application.objects.filter(worker_id = workerID, job_offer_id = id)
+
+    if query:
+        return HttpResponse(fail_create + "Application with id = " + str(query[0].id), status=409)
+
+    if not expires_on:
+        expires_on = datetime.now() + timedelta(days=30)
+
+    newApplication = Application(worker_id = workerID, job_offer_id = id, created_on = datetime.now(), expires_on =  expires_on)
+    
+    if description:
+        newApplication.description = description
+ 
+    newApplication.save()
+    return HttpResponse(succ_create + "Application with worker_id = " + str(workerID) + " and job_offer_id = " + id, status=201)
+
+@require_http_methods(["POST"])
+def post_call (request,name, password, employer_id, worker_id, callName = None ):
+    id = get_id(name, password)
+
+    if id == -1 or (id != int(employer_id) and id != int(worker_id)):
+        return HttpResponse(wrong_id, status=401)
+
+    found = None
+
+    job = JobOffer.objects.filter(employer_id = employer_id)
+
+    for j in job:
+        query = Application.objects.filter(worker_id = worker_id, job_offer_id = j.id, response = True)
+        if query:
+            found = j.name
+
+    if not found:
+        return HttpResponse("Cannot create call, Accepted application doesnt exist!", status=404)
+
+    if not callName:
+        callName = found + " - Call"
+
+    newCall = Call(employer_id = employer_id, worker_id = worker_id, name = callName, status = False)
+
+    newCall.save()
+    return HttpResponse(succ_create + "Call with name = " + callName, status=201)
+
 
 #DELETE
-def deleteUser (request, type, user_id):
+@require_http_methods(["DELETE"])
+def delete_user (request, type, name, password):
 
-    if request.method == 'DELETE':
-        if type == 'W':
-            
-            Application.objects.filter(worker_id=user_id).delete() # vymazanie vsetkych Applications worker-a
-            Worker.objects.filter(id=user_id).delete() # vymazanie worker-a samotneho
-        elif type == 'E':
-            
-            query = JobOffer.objects.raw('SELECT id FROM job_offer WHERE employer_id =' + str(user_id) + ';') #zistenie idciek JobOffer-ov vytvorenych danym employer-om
-            for vysledok in query:
-                Application.objects.filter(job_offer_id=vysledok.id).delete()
-            JobOffer.objects.filter(employer_id=user_id).delete() # vymazanie vsetkych JobOffers vytvorenych employer-om
-            Employer.objects.filter(id=user_id).delete()
-        else:
-            return HttpResponse("Nesprávny formát! Používateľ nie je ani Worker, ani Employer", status=400)
+    user_id = get_id(name, password)
+
+    if user_id == -1 :
+        return HttpResponse(wrong_id, status=401)
+
+    if type == 'W':         
+        Application.objects.filter(worker_id=user_id).delete() 
+        Call.objects.filter(worker_id=user_id).delete()
+        Worker.objects.filter(id=user_id).delete() 
+
+    elif type == 'E':         
+        query = JobOffer.objects.raw('SELECT id FROM job_offer WHERE employer_id =' + str(user_id) + ';') #zistenie idciek JobOffer-ov vytvorenych danym employer-om
+        for vysledok in query:
+            Application.objects.filter(job_offer_id=vysledok.id).delete()
+
+        JobOffer.objects.filter(employer_id=user_id).delete() 
+        Call.objects.filter(employer_id=user_id).delete()
+        Employer.objects.filter(id=user_id).delete()
 
     else:
-        return HttpResponse("deleteUser nie je DELETE", status=400)
+        return HttpResponse(wrong_type, status=400)
+ 
+    return HttpResponse(succ_delete + "User with id = " + user_id, status=200)
 
-    return HttpResponse("deleteUser bol úspešný.", status=200)
+@require_http_methods(["DELETE"])
+def delete_jobOffer (request,name, password, id):
+    user_id = get_id(name, password)
 
-def testDeleteUser (request):
-    r = requests.delete('http://127.0.0.1:8000/deleteUser/E/12')
-    return HttpResponse(r.text, status=200)
+    if user_id == -1:
+        return HttpResponse(wrong_id, status=401)
 
-def deleteJobOffer (request, job_offer_id):
-    if request.method == 'DELETE':
-        Application.objects.filter(job_offer_id=job_offer_id).delete() # vymazanie applications viazucich sa na mazanu pracovnu ponuku
-        JobOffer.objects.filter(id=job_offer_id).delete()
-    else:
-        return HttpResponse("deleteJobOffer nie je DELETE", status=400)
-    return HttpResponse("deleteJobOffer bol úspešný", status=200)
+    job = JobOffer.objects.get(pk = id)
 
-def testDeleteJobOffer (request):
-    r = requests.delete('http://127.0.0.1:8000/deleteJobOffer/6')
-    return HttpResponse(r.text, status=200)
+    if job.employer_id != user_id:
+        return HttpResponse(false_auth, status = 401)
+
+
+    Application.objects.filter(job_offer_id=id).delete() 
+    JobOffer.objects.filter(id=id).delete()
+
+    return HttpResponse(succ_delete + "Job offer with id = " + id, status=200)
+
+def delete_application (request, name, password, id):
+    user_id = get_id(name, password)
+
+    if user_id == -1:
+        return HttpResponse(wrong_id, status=401)
+
+    app = Application.objects.get(pk = id)
+
+    if app.worker_id != user_id:
+        return HttpResponse(false_auth, status = 401)
+
+
+    Application.objects.filter(id=id).delete()
+
+    return HttpResponse(succ_delete + "Application with id = " + id, status=200)

@@ -41,7 +41,6 @@ class Company(models.Model):
     phone = models.CharField(max_length=15)
     email = models.CharField(max_length=30)
     website = models.CharField(max_length=30, blank=True, null=True)
-    employer_id = models.IntegerField()
 
     class Meta:
         managed = False
