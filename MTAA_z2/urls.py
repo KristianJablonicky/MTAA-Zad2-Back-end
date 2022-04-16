@@ -4,44 +4,42 @@ Definition of urls for MTAA_z2.
 
 from datetime import datetime
 from django.urls import path
+from django.urls import re_path
 from django.contrib import admin
 from app import forms, views
 
 import datetime
 
 urlpatterns = [
-    path('', views.home, name='home'),
-    path('test1/<str:type>/<str:name>/<str:password>', views.test1_w), # GET request, ktory vola POST postUser
-    path('test1/<str:type>/<str:name>/<str:password>/<str:company>', views.test1_e), # GET request, ktory vola POST postUser
-    path('postUser/<str:type>/<str:name>/<str:password>', views.post_worker), # prvotne vytvorenie profilu z login obrazovky
-    path('postUser/<str:type>/<str:name>/<str:password>/<str:company>', views.post_employer), # v pripade employera je potrebny nazov firmy kvoli id
-    path('postCompany/<str:company>', views.postCompany),
-    path('testJobOffer', views.testJobOffer),
-    path('postJobOffer/<str:name>/<int:employer_id>/<str:field>/<str:salary>/<str:working_hours>/<str:location>/<str:detail>', views.postJobOffer),
-    path('postApplication/<int:worker_id>/<int:job_offer_id>/<str:description>/<int:created_on>/<int:expires_on>', views.postApplication), #worker vytvori application
-    path('testApplication', views.testApplication),
-    path('postCall/<int:employer_id>/<int:worker_id>', views.postCall),
-    path('testCall', views.testCall),
-    path('deleteUser/<str:type>/<int:user_id>', views.deleteUser),
-    path('testDeleteUser', views.testDeleteUser),
-    path('deleteJobOffer/<int:job_offer_id>', views.deleteJobOffer),
-    path('testDeleteJobOffer', views.testDeleteJobOffer),
-    path('admin/', admin.site.urls),
-    path('findUsers/', views.get_all_users),
+    path('', views.home, name='home/'),
+    #POST
+    re_path(r'^postUser/W/(?P<name>[^//\d]+)/(?P<password>[^//]+)/(?:date=(?P<birth_date>[0-9/-]+)/)?(?:email=(?P<email>[^//]+)/)?(?:phone=(?P<phone>[0-9/+]+)/)?$', views.post_worker), 
+    re_path(r'^postUser/E/(?P<name>[^//\d]+)/(?P<password>[^//]+)/(?P<companyName>[^//\d]+)/(?:date=(?P<birth_date>[0-9/-]+)/)?(?:email=(?P<email>[^//]+)/)?(?:phone=(?P<phone>[0-9/+]+)/)?$', views.post_employer), 
+    re_path(r'^postCompany/(?P<name>[^//\d]+)/(?P<email>[^//]+)/(?P<phone>[0-9/+]+)/(?:web=(?P<website>[^//]+)/)?(?:detail=(?P<detail>[^//]+)/)?$', views.post_company),
+    re_path(r'^postJobOffer/(?P<name>[^//\d]+)/(?P<password>[^//]+)/(?P<job_name>[^//\d]+)/(?P<field>[^//\d]+)/(?:salary=(?P<salary>\d+)/)?(?:hours=(?P<working_hours>[0-9:]+)/)?(?:location=(?P<location>[^//]+)/)?(?:detail=(?P<detail>[^//]+)/)?$', views.post_jobOffer),
+    re_path(r'^postApplication/(?P<name>[^//\d]+)/(?P<password>[^//]+)/(?P<id>\d+)/(?:desc=(?P<description>[^//]*)/)?(?:expires=(?P<expires_on>[0-9:/-]+)/)?$', views.post_application),
+    re_path(r'^postCall/(?P<name>[^//\d]+)/(?P<password>[^//]+)/(?P<employer_id>\d+)/(?P<worker_id>\d+)/(?:name=(?P<callName>[^//\d]+)/)?$', views.post_call),
+    #DELETE
+    path('delUser/<str:type>/<str:name>/<str:password>/', views.delete_user),
+    path('delJobOffer/<str:name>/<str:password>/<int:id>/', views.delete_jobOffer),
+    path('delApplication/<str:name>/<str:password>/<int:id>/', views.delete_application),
+    #GET
+    re_path(r'^findUsers/((?P<type>.)/$)?$', views.get_all_users),
     path('getUser/<str:name>/<str:password>/', views.login_user),
     path('getWorker/<int:id>/', views.get_worker),
-    path('getJobOffer/<int:id>/', views.get_job_offer),
     path('getEmployer/<int:id>/', views.get_employer),
+    path('getJobOffer/<int:id>/', views.get_job_offer),
     path('getCompany/<int:id>/', views.get_company),
     path('getAllApplications/<str:type>/<int:id>/', views.get_all_applications),
     path('getAllJobOffers/<int:employerID>/', views.get_all_job_offers),
     path('getAllEmployers/<int:companyID>/', views.get_all_employers),
     path('getAllCalls/<str:type>/<int:id>/', views.get_all_calls),
-    path('findJobOffers/', views.search_Jobs),
-    path('putJobOffer/<int:employerID>/<int:id>/<str:name>/<str:field>/<str:salary>/<str:working_hours>/<str:location>/<str:detail>/', views.put_job_offer),
-    path('putCall/<int:userID>/<int:id>/<str:name>/<str:status>/', views.put_call),
-    path('putWorker/<int:id>/<str:name>/<str:password>/<str:birth_date>/<str:email>/<str:phone>/<str:cv>/', views.put_worker),
-    path('putEmployer/<int:id>/<str:name>/<str:password>/<str:birth_date>/<str:email>/<str:phone>/<str:companyName>/', views.put_employer),
-    path('putApplication/Employer/<int:employerID>/<int:id>/<str:response>/', views.put_applicationE),
-    path('putApplication/Worker/<int:workerID>/<int:id>/<str:description>/<str:expires_on>/', views.put_applicationW),
+    path('searchJobOffers/', views.search_Jobs),
+    #PUT
+    re_path(r'^putJobOffer/(?P<name>[^//\d]+)/(?P<password>[^//]+)/(?P<id>\d+)/(?:name=(?P<jobName>[^//\d]+)/)?(?:field=(?P<field>[^//\d]+)/)?(?:salary=(?P<salary>\d*)/)?(?:hours=(?P<working_hours>[0-9:]*)/)?(?:location=(?P<location>[^//]*)/)?(?:detail=(?P<detail>[^//]*)/)?$', views.put_job_offer),
+    re_path(r'^putCall/(?P<name>[^//\d]+)/(?P<password>[^//]+)/(?P<id>\d+)/(?:name=(?P<callName>[^//\d]+)/)?(?:status=(?P<status>[a-zA-Z]+)/)?$', views.put_call),
+    re_path(r'^putWorker/(?P<oldName>[^//\d]+)/(?P<oldPassword>[^//]+)/(?P<id>\d+)/(?:name=(?P<name>[^//\d]+)/)?(?:password=(?P<password>[^//]+)/)?(?:date=(?P<birth_date>[0-9/-]*)/)?(?:email=(?P<email>[^//]*)/)?(?:phone=(?P<phone>[0-9/+]*)/)?$', views.put_worker),
+    re_path(r'^putEmployer/(?P<oldName>[^//\d]+)/(?P<oldPassword>[^//]+)/(?P<id>\d+)/(?:name=(?P<name>[^//\d]+)/)?(?:password=(?P<password>[^//]+)/)?(?:date=(?P<birth_date>[0-9/-]*)/)?(?:email=(?P<email>[^//]*)/)?(?:phone=(?P<phone>[0-9/+]*)/)?(?:company=(?P<companyId>[0-9]+)/)?$', views.put_employer),
+    path('putApplication/E/<str:name>/<str:password>/<int:id>/<str:response>', views.put_applicationE),
+    re_path(r'^putApplication/W/(?P<name>[^//\d]+)/(?P<password>[^//]+)/(?P<id>\d+)/(?:desc=(?P<description>[^//]*)/)?(?:expires=(?P<expires_on>[0-9:/-]+)/)?$', views.put_applicationW),
 ]
