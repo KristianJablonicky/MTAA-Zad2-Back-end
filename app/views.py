@@ -89,7 +89,7 @@ def get_worker(request, id):
     workers = Worker.objects.filter(id = id)
 
     if not workers:
-        return HttpResponse(empty_response + "Worker with id = " + id, status=204)
+        return HttpResponse(empty_response + "Worker with id = " + str(id), status=204)
 
     return HttpResponse(json.dumps(list(workers.values()), indent = 4, default=str), content_type="application/json")
 
@@ -99,7 +99,7 @@ def get_employer(request, id):
     Employers = Employer.objects.filter(id = id)
 
     if not Employers:
-        return HttpResponse(empty_response + "Employer with id = " + id, status=204)
+        return HttpResponse(empty_response + "Employer with id = " + str(id), status=204)
 
     return HttpResponse(json.dumps(list(Employers.values()), indent = 4, default=str), content_type="application/json")
 
@@ -116,7 +116,7 @@ def get_company(request, id):
     Companies = Company.objects.filter(id = id)
 
     if not Companies:
-        return HttpResponse(empty_response + "Company with id = " + id, status=204)
+        return HttpResponse(empty_response + "Company with id = " + str(id), status=204)
 
     return HttpResponse(json.dumps(list(Companies.values()), indent = 4, default=str), content_type="application/json")
 
@@ -126,7 +126,7 @@ def get_job_offer(request, id):
     Offers = JobOffer.objects.filter(id = id)
 
     if not Offers:
-        return HttpResponse(empty_response + "Job offer with id = " + id, status=204)
+        return HttpResponse(empty_response + "Job offer with id = " + str(id), status=204)
 
     return HttpResponse(json.dumps(list(Offers.values()), indent = 4, default=str), content_type="application/json")
 
@@ -209,7 +209,7 @@ def put_worker (request, oldName, oldPassword, name = None, password = None, bir
 
 
     worker.save()
-    return HttpResponse(succ_save + "Worker with id = " + id, status=200)
+    return HttpResponse(succ_save + "Worker with id = " + str(id), status=200)
 
 #def post_cv (request):
 #doplnit ukladanie pdf
@@ -254,7 +254,7 @@ def put_employer (request, oldName, oldPassword, name = None, password = None, b
 
 
     employer.save()
-    return HttpResponse(succ_save + "Employer with id = " + id, status=200)
+    return HttpResponse(succ_save + "Employer with id = " + str(id), status=200)
 
 @require_http_methods(["PUT"])
 def put_call (request, name, password, id, callName = None, status = None):
@@ -275,7 +275,7 @@ def put_call (request, name, password, id, callName = None, status = None):
         call.status = status
 
     call.save()
-    return HttpResponse(succ_save + "Call with id = " + id, status=200)
+    return HttpResponse(succ_save + "Call with id = " + str(id), status=200)
 
 @require_http_methods(["PUT"])
 def put_job_offer (request, name, password, id, jobName = None, field = None, salary = None, working_hours = None, location = None, detail = None):
@@ -321,7 +321,7 @@ def put_job_offer (request, name, password, id, jobName = None, field = None, sa
             offer.detail = None
 
     offer.save()
-    return HttpResponse(succ_save + "Job offer with id = " + id, status=200)
+    return HttpResponse(succ_save + "Job offer with id = " + str(id), status=200)
 
 @require_http_methods(["PUT"])
 def put_applicationE (request, name, password, id, response):
@@ -339,7 +339,7 @@ def put_applicationE (request, name, password, id, response):
     application.response = response
 
     application.save()
-    return HttpResponse(succ_save + "Application with id = " + id, status=200)
+    return HttpResponse(succ_save + "Application with id = " + str(id), status=200)
 
 @require_http_methods(["PUT"])
 def put_applicationW (request , name, password, id , description = None, expires_on = None):
@@ -363,7 +363,7 @@ def put_applicationW (request , name, password, id , description = None, expires
         application.expires_on = expires_on
 
     application.save()
-    return HttpResponse(succ_save + "Application with id = " + id, status=200)
+    return HttpResponse(succ_save + "Application with id = " + str(id), status=200)
 
 
 #POST
@@ -558,7 +558,7 @@ def delete_user (request, type, name, password):
     else:
         return HttpResponse(wrong_type, status=400)
  
-    return HttpResponse(succ_delete + "User with id = " + user_id, status=200)
+    return HttpResponse(succ_delete + "User with id = " + str(user_id), status=200)
 
 @require_http_methods(["DELETE"])
 def delete_jobOffer (request,name, password, id):
@@ -576,7 +576,7 @@ def delete_jobOffer (request,name, password, id):
     Application.objects.filter(job_offer_id=id).delete() 
     JobOffer.objects.filter(id=id).delete()
 
-    return HttpResponse(succ_delete + "Job offer with id = " + id, status=200)
+    return HttpResponse(succ_delete + "Job offer with id = " + str(id), status=200)
 
 def delete_application (request, name, password, id):
     user_id = get_id(name, password)
@@ -592,4 +592,4 @@ def delete_application (request, name, password, id):
 
     Application.objects.filter(id=id).delete()
 
-    return HttpResponse(succ_delete + "Application with id = " + id, status=200)
+    return HttpResponse(succ_delete + "Application with id = " + str(id), status=200)
