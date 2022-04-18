@@ -38,8 +38,8 @@ urlpatterns = [
     #PUT
     re_path(r'^putJobOffer/(?P<name>[^//\d]+)/(?P<password>[^//]+)/(?P<id>\d+)/(?:name=(?P<jobName>[^//\d]+)/)?(?:field=(?P<field>[^//\d]+)/)?(?:salary=(?P<salary>\d*)/)?(?:hours=(?P<working_hours>[0-9:]*)/)?(?:location=(?P<location>[^//]*)/)?(?:detail=(?P<detail>[^//]*)/)?$', views.put_job_offer),
     re_path(r'^putCall/(?P<name>[^//\d]+)/(?P<password>[^//]+)/(?P<id>\d+)/(?:name=(?P<callName>[^//\d]+)/)?(?:status=(?P<status>[a-zA-Z]+)/)?$', views.put_call),
-    re_path(r'^putWorker/(?P<oldName>[^//\d]+)/(?P<oldPassword>[^//]+)/(?P<id>\d+)/(?:name=(?P<name>[^//\d]+)/)?(?:password=(?P<password>[^//]+)/)?(?:date=(?P<birth_date>[0-9/-]*)/)?(?:email=(?P<email>[^//]*)/)?(?:phone=(?P<phone>[0-9/+]*)/)?$', views.put_worker),
-    re_path(r'^putEmployer/(?P<oldName>[^//\d]+)/(?P<oldPassword>[^//]+)/(?P<id>\d+)/(?:name=(?P<name>[^//\d]+)/)?(?:password=(?P<password>[^//]+)/)?(?:date=(?P<birth_date>[0-9/-]*)/)?(?:email=(?P<email>[^//]*)/)?(?:phone=(?P<phone>[0-9/+]*)/)?(?:company=(?P<companyId>[0-9]+)/)?$', views.put_employer),
+    re_path(r'^putWorker/(?P<oldName>[^//\d]+)/(?P<oldPassword>[^//]+)/(?:name=(?P<name>[^//\d]+)/)?(?:password=(?P<password>[^//]+)/)?(?:date=(?P<birth_date>[0-9/-]*)/)?(?:email=(?P<email>[^//]*)/)?(?:phone=(?P<phone>[0-9/+]*)/)?$', views.put_worker),
+    re_path(r'^putEmployer/(?P<oldName>[^//\d]+)/(?P<oldPassword>[^//]+)/(?:name=(?P<name>[^//\d]+)/)?(?:password=(?P<password>[^//]+)/)?(?:date=(?P<birth_date>[0-9/-]*)/)?(?:email=(?P<email>[^//]*)/)?(?:phone=(?P<phone>[0-9/+]*)/)?(?:company=(?P<companyId>[0-9]+)/)?$', views.put_employer),
     path('putApplication/E/<str:name>/<str:password>/<int:id>/<str:response>', views.put_applicationE),
     re_path(r'^putApplication/W/(?P<name>[^//\d]+)/(?P<password>[^//]+)/(?P<id>\d+)/(?:desc=(?P<description>[^//]*)/)?(?:expires=(?P<expires_on>[0-9:/-]+)/)?$', views.put_applicationW),
 ]
