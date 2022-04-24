@@ -175,7 +175,7 @@ def search_Jobs (request):
 @require_http_methods(["GET"])
 def getPDF (request, id):
 
-    worker = Worker.objects.get (pk = id)
+    worker = Worker.objects.get (id = id)
 
     response = FileResponse(worker.cv)
 
@@ -203,7 +203,7 @@ def postPDF (request, name, password):
 
     #print(temp)
 
-    worker = Worker.objects.get (pk = id)
+    worker = Worker.objects.get (id = id)
 
     worker.cv = temp
     worker.save()
@@ -220,7 +220,7 @@ def put_worker (request, oldName, oldPassword, name = None, password = None, bir
     if id == -1:
         return HttpResponse(wrong_id, status=401)
 
-    worker = Worker.objects.get (pk = id)
+    worker = Worker.objects.get (id = id)
 
     if name:
         worker.name = name
@@ -248,7 +248,7 @@ def put_worker (request, oldName, oldPassword, name = None, password = None, bir
 
 
     worker.save()
-    return HttpResponse(succ_save + "Worker with id = " + id, status=200)
+    return HttpResponse(succ_save + "Worker with id = " + str(id), status=200)
 
 #def post_cv (request):
 #doplnit ukladanie pdf
@@ -261,7 +261,7 @@ def put_employer (request, oldName, oldPassword, name = None, password = None, b
     if id == -1:
         return HttpResponse(wrong_id, status=401)
 
-    employer = Employer.objects.get (pk = id)
+    employer = Employer.objects.get (id = id)
 
     if name:
         employer.name = name
@@ -288,12 +288,12 @@ def put_employer (request, oldName, oldPassword, name = None, password = None, b
             employer.phone = None
 
     if companyId:
-        company = Company.objects.get(pk = companyId)
+        company = Company.objects.get(id = companyId)
         employer.company_id = company.id
 
 
     employer.save()
-    return HttpResponse(succ_save + "Employer with id = " + id, status=200)
+    return HttpResponse(succ_save + "Employer with id = " + str(id), status=200)
 
 @require_http_methods(["PUT"])
 def put_call (request, name, password, id, callName = None, status = None):
@@ -302,7 +302,7 @@ def put_call (request, name, password, id, callName = None, status = None):
     if userID == -1:
         return HttpResponse(wrong_id, status=401)
 
-    call = Call.objects.get (pk = id)
+    call = Call.objects.get (id = id)
 
     if userID != call.worker_id and userID != call.employer_id:      
         return HttpResponse(false_auth, status = 401)
@@ -314,7 +314,7 @@ def put_call (request, name, password, id, callName = None, status = None):
         call.status = status
 
     call.save()
-    return HttpResponse(succ_save + "Call with id = " + id, status=200)
+    return HttpResponse(succ_save + "Call with id = " + str(id), status=200)
 
 @require_http_methods(["PUT"])
 def put_job_offer (request, name, password, id, jobName = None, field = None, salary = None, working_hours = None, location = None, detail = None):
@@ -322,8 +322,8 @@ def put_job_offer (request, name, password, id, jobName = None, field = None, sa
 
     if employerID == -1:
         return HttpResponse(wrong_id, status=401)
-    
-    offer = JobOffer.objects.get(pk = id)
+
+    offer = JobOffer.objects.get(id = id)
 
     if employerID != offer.employer_id:
         return HttpResponse(false_auth, status = 401)
@@ -360,7 +360,7 @@ def put_job_offer (request, name, password, id, jobName = None, field = None, sa
             offer.detail = None
 
     offer.save()
-    return HttpResponse(succ_save + "Job offer with id = " + id, status=200)
+    return HttpResponse(succ_save + "Job offer with id = " + str(id), status=200)
 
 @require_http_methods(["PUT"])
 def put_applicationE (request, name, password, id, response):
@@ -369,8 +369,8 @@ def put_applicationE (request, name, password, id, response):
     if employerID == -1:
         return HttpResponse(wrong_id, status=401)
 
-    application = Application.objects.get(pk = id)
-    offer = JobOffer.objects.get(pk = application.job_offer_id)
+    application = Application.objects.get(id = id)
+    offer = JobOffer.objects.get(id = application.job_offer_id)
 
     if offer.employer_id != employerID:
         return HttpResponse(false_auth, status = 401)
@@ -378,7 +378,7 @@ def put_applicationE (request, name, password, id, response):
     application.response = response
 
     application.save()
-    return HttpResponse(succ_save + "Application with id = " + id, status=200)
+    return HttpResponse(succ_save + "Application with id = " + str(id), status=200)
 
 @require_http_methods(["PUT"])
 def put_applicationW (request , name, password, id , description = None, expires_on = None):
@@ -387,7 +387,7 @@ def put_applicationW (request , name, password, id , description = None, expires
     if workerID == -1:
         return HttpResponse(wrong_id, status=401)
     
-    application = Application.objects.get(pk = id)
+    application = Application.objects.get(id = id)
 
     if application.worker_id != workerID:
         return HttpResponse(false_auth, status = 401)
@@ -402,7 +402,7 @@ def put_applicationW (request , name, password, id , description = None, expires
         application.expires_on = expires_on
 
     application.save()
-    return HttpResponse(succ_save + "Application with id = " + id, status=200)
+    return HttpResponse(succ_save + "Application with id = " + str(id), status=200)
 
 
 #POST
@@ -597,7 +597,7 @@ def delete_user (request, type, name, password):
     else:
         return HttpResponse(wrong_type, status=400)
  
-    return HttpResponse(succ_delete + "User with id = " + user_id, status=200)
+    return HttpResponse(succ_delete + "User with id = " + str(user_id), status=200)
 
 @require_http_methods(["DELETE"])
 def delete_jobOffer (request,name, password, id):
@@ -606,7 +606,7 @@ def delete_jobOffer (request,name, password, id):
     if user_id == -1:
         return HttpResponse(wrong_id, status=401)
 
-    job = JobOffer.objects.get(pk = id)
+    job = JobOffer.objects.get(id = id)
 
     if job.employer_id != user_id:
         return HttpResponse(false_auth, status = 401)
@@ -615,7 +615,7 @@ def delete_jobOffer (request,name, password, id):
     Application.objects.filter(job_offer_id=id).delete() 
     JobOffer.objects.filter(id=id).delete()
 
-    return HttpResponse(succ_delete + "Job offer with id = " + id, status=200)
+    return HttpResponse(succ_delete + "Job offer with id = " + str(id), status=200)
 
 def delete_application (request, name, password, id):
     user_id = get_id(name, password)
@@ -623,7 +623,7 @@ def delete_application (request, name, password, id):
     if user_id == -1:
         return HttpResponse(wrong_id, status=401)
 
-    app = Application.objects.get(pk = id)
+    app = Application.objects.get(id = id)
 
     if app.worker_id != user_id:
         return HttpResponse(false_auth, status = 401)
@@ -631,4 +631,4 @@ def delete_application (request, name, password, id):
 
     Application.objects.filter(id=id).delete()
 
-    return HttpResponse(succ_delete + "Application with id = " + id, status=200)
+    return HttpResponse(succ_delete + "Application with id = " + str(id), status=200)
