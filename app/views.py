@@ -89,7 +89,7 @@ def get_worker(request, id):
     workers = Worker.objects.filter(id = id)
 
     if not workers:
-        return HttpResponse(empty_response + "Worker with id = " + id, status=204)
+        return HttpResponse(empty_response + "Worker with id = " + str(id), status=204)
 
     return HttpResponse(json.dumps(list(workers.values()), indent = 4, default=str), content_type="application/json")
 
@@ -99,7 +99,7 @@ def get_employer(request, id):
     Employers = Employer.objects.filter(id = id)
 
     if not Employers:
-        return HttpResponse(empty_response + "Employer with id = " + id, status=204)
+        return HttpResponse(empty_response + "Employer with id = " + str(id), status=204)
 
     return HttpResponse(json.dumps(list(Employers.values()), indent = 4, default=str), content_type="application/json")
 
@@ -116,7 +116,7 @@ def get_company(request, id):
     Companies = Company.objects.filter(id = id)
 
     if not Companies:
-        return HttpResponse(empty_response + "Company with id = " + id, status=204)
+        return HttpResponse(empty_response + "Company with id = " + str(id), status=204)
 
     return HttpResponse(json.dumps(list(Companies.values()), indent = 4, default=str), content_type="application/json")
 
@@ -126,7 +126,7 @@ def get_job_offer(request, id):
     Offers = JobOffer.objects.filter(id = id)
 
     if not Offers:
-        return HttpResponse(empty_response + "Job offer with id = " + id, status=204)
+        return HttpResponse(empty_response + "Job offer with id = " + str(id), status=204)
 
     return HttpResponse(json.dumps(list(Offers.values()), indent = 4, default=str), content_type="application/json")
 
@@ -176,18 +176,10 @@ def search_Jobs (request):
 def getPDF (request, id):
 
     worker = Worker.objects.get (id = id)
-
+    print(str(worker.cv))
     response = FileResponse(worker.cv)
 
     return response
-
-
-def extractPDF (request):
-    if request.method == 'POST':
-        for filename, file in request.FILES.items():
-            return request.FILES[filename].file
-
-    return None
 
 
 @require_http_methods(["POST"])
@@ -197,15 +189,12 @@ def postPDF (request, name, password):
     if id == -1:
         return HttpResponse(wrong_id, status=401)
 
-    file = extractPDF(request)
-
-    temp = file.read()
-
-    #print(temp)
-
     worker = Worker.objects.get (id = id)
 
-    worker.cv = temp
+    body_unicode = request.body.decode('utf-8') 	
+    body = json.loads(body_unicode)
+    worker.cv = body['PDFbytes'].encode('ascii')
+
     worker.save()
 
     return HttpResponse("File uploaded to Worker with name = " + worker.name, status=200)
@@ -250,9 +239,6 @@ def put_worker (request, oldName, oldPassword, name = None, password = None, bir
     worker.save()
     return HttpResponse(succ_save + "Worker with id = " + str(id), status=200)
 
-#def post_cv (request):
-#doplnit ukladanie pdf
-#worker.cv = ....
 
 @require_http_methods(["PUT"])
 def put_employer (request, oldName, oldPassword, name = None, password = None, birth_date = None, email = None, phone = None, companyId = None):
@@ -288,7 +274,7 @@ def put_employer (request, oldName, oldPassword, name = None, password = None, b
             employer.phone = None
 
     if companyId:
-        company = Company.objects.get(id = companyId)
+        company = Company.objects.get(id =companyId)
         employer.company_id = company.id
 
 
@@ -322,7 +308,7 @@ def put_job_offer (request, name, password, id, jobName = None, field = None, sa
 
     if employerID == -1:
         return HttpResponse(wrong_id, status=401)
-
+    
     offer = JobOffer.objects.get(id = id)
 
     if employerID != offer.employer_id:
@@ -370,7 +356,7 @@ def put_applicationE (request, name, password, id, response):
         return HttpResponse(wrong_id, status=401)
 
     application = Application.objects.get(id = id)
-    offer = JobOffer.objects.get(id = application.job_offer_id)
+    offer = JobOffer.objects.get(id =application.job_offer_id)
 
     if offer.employer_id != employerID:
         return HttpResponse(false_auth, status = 401)
@@ -541,7 +527,7 @@ def post_application (request, name, password, id, description = None, expires_o
         newApplication.description = description
  
     newApplication.save()
-    return HttpResponse(succ_create + "Application with worker_id = " + str(workerID) + " and job_offer_id = " + id, status=201)
+    return HttpResponse(succ_create + "Application with worker_id = " + str(workerID) + " and job_offer_id = " + str(id), status=201)
 
 @require_http_methods(["POST"])
 def post_call (request,name, password, employer_id, worker_id, callName = None ):
