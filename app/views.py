@@ -176,7 +176,6 @@ def search_Jobs (request):
 def getPDF (request, id):
 
     worker = Worker.objects.get (id = id)
-    print(str(worker.cv))
     response = FileResponse(worker.cv)
 
     return response
