@@ -208,6 +208,11 @@ def put_worker (request, oldName, oldPassword, name = None, password = None, bir
     if id == -1:
         return HttpResponse(wrong_id, status=401)
 
+    if name != None:
+        query = Worker.objects.filter(name = name)
+        if query: #pouzivatel s novymi udajmi uz existuje
+            return HttpResponse(fail_create, status=403)
+
     worker = Worker.objects.get (id = id)
 
     if name:
@@ -245,6 +250,11 @@ def put_employer (request, oldName, oldPassword, name = None, password = None, b
 
     if id == -1:
         return HttpResponse(wrong_id, status=401)
+
+    if name != None:
+        query = Employer.objects.filter(name = name)
+        if query: #pouzivatel s novymi udajmi uz existuje
+            return HttpResponse(fail_create, status=403)
 
     employer = Employer.objects.get (id = id)
 
